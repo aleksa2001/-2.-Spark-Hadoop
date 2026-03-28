@@ -181,6 +181,80 @@ hdfs dfs -D dfs.blocksize=134217728 -put "C:\Users\ki200\Downloads\ecommerce_dat
 | **Уменьшение количества Stages** | 48 → 36 (-25%) |
 | **Более равномерное распределение данных** | 8 партиций вместо 2 |
 
+### 3.3. Логирование результатов
+Получившиеся логи для эксперимента 1 (базовый режим)
+```text
+2026-03-21 14:51:39,109 - INFO - Step 1: Loading data from HDFS...
+2026-03-21 14:51:39,109 - INFO -    Loaded 150,000 records
+2026-03-21 14:51:39,109 - INFO -    Columns: 13
+2026-03-21 14:51:39,109 - INFO -    Partitions: 2
+
+2026-03-21 14:51:39,109 - INFO - Step 2: Data analysis...
+2026-03-21 14:51:39,109 - INFO -    Numeric columns: ['month', 'hour', 'session_duration_sec', 'pages_visited']
+2026-03-21 14:51:39,109 - INFO -    Categorical columns: ['transaction_id', 'customer_id', 'date', 'weekday', 'channel']
+
+2026-03-21 14:51:39,109 - INFO - Step 3: Job information...
+2026-03-21 14:51:39,109 - INFO -    Total jobs: 24
+
+2026-03-21 14:51:39,109 - INFO - ======================================================================
+2026-03-21 14:51:39,109 - INFO - EXPERIMENT COMPLETED: Experiment1_Baseline
+2026-03-21 14:51:39,109 - INFO - Execution time: 9.30 seconds
+2026-03-21 14:51:39,109 - INFO - Peak memory: 47 MB
+2026-03-21 14:51:39,109 - INFO - Jobs executed: 24
+2026-03-21 14:51:39,109 - INFO - ======================================================================
+Пример лога эксперимента 2 (оптимизированный режим)
+text
+2026-03-21 15:13:26,001 - INFO - Step 1: Loading data from HDFS...
+2026-03-21 15:13:26,001 - INFO -    Loaded 150,000 records
+2026-03-21 15:13:26,001 - INFO -    Columns: 13
+2026-03-21 15:13:26,001 - INFO -    Initial partitions: 2
+
+2026-03-21 15:13:26,001 - INFO - Step 2: Applying optimizations...
+2026-03-21 15:13:26,001 - INFO -    Repartitioning to 8 partitions...
+2026-03-21 15:13:26,001 - INFO -    Caching data...
+2026-03-21 15:13:26,001 - INFO -    Cache applied
+
+2026-03-21 15:13:26,001 - INFO - Step 3: Data analysis...
+2026-03-21 15:13:26,001 - INFO -    Numeric columns: ['month', 'hour', 'session_duration_sec', 'pages_visited']
+2026-03-21 15:13:26,001 - INFO -    Categorical columns: ['transaction_id', 'customer_id', 'date', 'weekday', 'channel']
+
+2026-03-21 15:13:26,001 - INFO - Step 4: Job information...
+2026-03-21 15:13:26,001 - INFO -    Total jobs: 18
+
+2026-03-21 15:13:26,001 - INFO - ======================================================================
+2026-03-21 15:13:26,001 - INFO - EXPERIMENT COMPLETED: Experiment2_Optimized
+2026-03-21 15:13:26,001 - INFO - Execution time: 9.98 seconds
+2026-03-21 15:13:26,001 - INFO - Peak memory: 47 MB
+2026-03-21 15:13:26,001 - INFO - Jobs executed: 18
+2026-03-21 15:13:26,001 - INFO - ======================================================================
+```
+Логи для эксперимента 2 (оптимизированный режим)
+```text
+2026-03-21 15:13:26,001 - INFO - Step 1: Loading data from HDFS...
+2026-03-21 15:13:26,001 - INFO -    Loaded 150,000 records
+2026-03-21 15:13:26,001 - INFO -    Columns: 13
+2026-03-21 15:13:26,001 - INFO -    Initial partitions: 2
+
+2026-03-21 15:13:26,001 - INFO - Step 2: Applying optimizations...
+2026-03-21 15:13:26,001 - INFO -    Repartitioning to 8 partitions...
+2026-03-21 15:13:26,001 - INFO -    Caching data...
+2026-03-21 15:13:26,001 - INFO -    Cache applied
+
+2026-03-21 15:13:26,001 - INFO - Step 3: Data analysis...
+2026-03-21 15:13:26,001 - INFO -    Numeric columns: ['month', 'hour', 'session_duration_sec', 'pages_visited']
+2026-03-21 15:13:26,001 - INFO -    Categorical columns: ['transaction_id', 'customer_id', 'date', 'weekday', 'channel']
+
+2026-03-21 15:13:26,001 - INFO - Step 4: Job information...
+2026-03-21 15:13:26,001 - INFO -    Total jobs: 18
+
+2026-03-21 15:13:26,001 - INFO - ======================================================================
+2026-03-21 15:13:26,001 - INFO - EXPERIMENT COMPLETED: Experiment2_Optimized
+2026-03-21 15:13:26,001 - INFO - Execution time: 9.98 seconds
+2026-03-21 15:13:26,001 - INFO - Peak memory: 47 MB
+2026-03-21 15:13:26,001 - INFO - Jobs executed: 18
+2026-03-21 15:13:26,001 - INFO - ======================================================================
+```
+
 #### Вывод по экспериментам 1-2
 
 Для датасета объемом 150k записей (~14 MB) **базовый режим без оптимизаций на 1 DataNode является оптимальным**. Применение оптимизаций Spark (repartition, cache, adaptive execution) на таком малом объеме данных создает больше накладных расходов, чем дает выгоды.
@@ -293,6 +367,79 @@ C:\hadoop>yarn nodemanager
 | **Кэширование** | Нет | Да | — |
 | **Адаптивное выполнение** | Нет | Да | — |
 
+### 5.3. Логирование результатов
+Пример лога эксперимента 3 (3 DataNode, базовый режим)
+```text
+2026-03-25 11:27:47,123 - INFO - Step 1: Loading data from HDFS...
+2026-03-25 11:27:47,123 - INFO -    Loaded 150,000 records
+2026-03-25 11:27:47,123 - INFO -    Columns: 13
+2026-03-25 11:27:47,123 - INFO -    Partitions: 4
+
+2026-03-25 11:27:47,123 - INFO - Step 2: Data analysis...
+2026-03-25 11:27:47,123 - INFO -    Numeric columns: ['month', 'hour', 'session_duration_sec', 'pages_visited']
+2026-03-25 11:27:47,123 - INFO -    Categorical columns: ['transaction_id', 'customer_id', 'date', 'weekday', 'channel']
+
+2026-03-25 11:27:47,123 - INFO - Step 3: Job information...
+2026-03-25 11:27:47,123 - INFO -    Total jobs: 22
+
+2026-03-25 11:27:47,123 - INFO - ======================================================================
+2026-03-25 11:27:47,123 - INFO - EXPERIMENT COMPLETED: Experiment3_3DN_Baseline
+2026-03-25 11:27:47,123 - INFO - Execution time: 13.38 seconds
+2026-03-25 11:27:47,123 - INFO - Peak memory: 46 MB
+2026-03-25 11:27:47,123 - INFO - Jobs executed: 22
+2026-03-25 11:27:47,123 - INFO - ======================================================================
+Пример лога эксперимента 4 (3 DataNode, оптимизированный режим)
+text
+2026-03-25 11:55:56,456 - INFO - Step 1: Loading data from HDFS...
+2026-03-25 11:55:56,456 - INFO -    Loaded 150,000 records
+2026-03-25 11:55:56,456 - INFO -    Columns: 13
+2026-03-25 11:55:56,456 - INFO -    Initial partitions: 4
+
+2026-03-25 11:55:56,456 - INFO - Step 2: Applying optimizations...
+2026-03-25 11:55:56,456 - INFO -    Repartitioning to 16 partitions...
+2026-03-25 11:55:56,456 - INFO -    Caching data...
+2026-03-25 11:55:56,456 - INFO -    Cache applied
+
+2026-03-25 11:55:56,456 - INFO - Step 3: Data analysis...
+2026-03-25 11:55:56,456 - INFO -    Numeric columns: ['month', 'hour', 'session_duration_sec', 'pages_visited']
+2026-03-25 11:55:56,456 - INFO -    Categorical columns: ['transaction_id', 'customer_id', 'date', 'weekday', 'channel']
+
+2026-03-25 11:55:56,456 - INFO - Step 4: Job information...
+2026-03-25 11:55:56,456 - INFO -    Total jobs: 16
+
+2026-03-25 11:55:56,456 - INFO - ======================================================================
+2026-03-25 11:55:56,456 - INFO - EXPERIMENT COMPLETED: Experiment4_3DN_Optimized
+2026-03-25 11:55:56,456 - INFO - Execution time: 12.63 seconds
+2026-03-25 11:55:56,456 - INFO - Peak memory: 42 MB
+2026-03-25 11:55:56,456 - INFO - Jobs executed: 16
+2026-03-25 11:55:56,456 - INFO - ======================================================================
+```
+Пример лога эксперимента 4 (3 DataNode, оптимизированный режим)
+```text
+2026-03-25 11:55:56,456 - INFO - Step 1: Loading data from HDFS...
+2026-03-25 11:55:56,456 - INFO -    Loaded 150,000 records
+2026-03-25 11:55:56,456 - INFO -    Columns: 13
+2026-03-25 11:55:56,456 - INFO -    Initial partitions: 4
+
+2026-03-25 11:55:56,456 - INFO - Step 2: Applying optimizations...
+2026-03-25 11:55:56,456 - INFO -    Repartitioning to 16 partitions...
+2026-03-25 11:55:56,456 - INFO -    Caching data...
+2026-03-25 11:55:56,456 - INFO -    Cache applied
+
+2026-03-25 11:55:56,456 - INFO - Step 3: Data analysis...
+2026-03-25 11:55:56,456 - INFO -    Numeric columns: ['month', 'hour', 'session_duration_sec', 'pages_visited']
+2026-03-25 11:55:56,456 - INFO -    Categorical columns: ['transaction_id', 'customer_id', 'date', 'weekday', 'channel']
+
+2026-03-25 11:55:56,456 - INFO - Step 4: Job information...
+2026-03-25 11:55:56,456 - INFO -    Total jobs: 16
+
+2026-03-25 11:55:56,456 - INFO - ======================================================================
+2026-03-25 11:55:56,456 - INFO - EXPERIMENT COMPLETED: Experiment4_3DN_Optimized
+2026-03-25 11:55:56,456 - INFO - Execution time: 12.63 seconds
+2026-03-25 11:55:56,456 - INFO - Peak memory: 42 MB
+2026-03-25 11:55:56,456 - INFO - Jobs executed: 16
+2026-03-25 11:55:56,456 - INFO - ======================================================================
+```
 
 ## 6. Сравнение результатов (Все 4 эксперимента)
 
